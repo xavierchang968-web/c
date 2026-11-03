@@ -122,8 +122,17 @@
   .view{display:none}
   .view.active{display:block}
   .emptyhint{text-align:center; color:var(--muted); padding:26px 10px}
-  .toast{position:fixed; left:50%; bottom:calc(92px + var(--safe-bottom)); transform:translateX(-50%); background:#eef1f7; color:#0f1420; padding:11px 18px; border-radius:999px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; z-index:30; max-width:90%}
-  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+  /* react-hot-toast–style notifications (vanilla re-creation) */
+  .toaster{position:fixed; top:calc(var(--safe-top) + 12px); left:0; right:0; z-index:60; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; padding:0 12px}
+  .rht{display:flex; align-items:center; gap:10px; max-width:380px; background:#fff; color:#363636; padding:10px 15px; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,.12),0 3px 3px rgba(0,0,0,.06); font-size:14px; font-weight:600; pointer-events:auto; opacity:0; transform:translateY(-18px) scale(.9); transition:opacity .35s, transform .35s cubic-bezier(.21,1.02,.73,1)}
+  .rht.show{opacity:1; transform:translateY(0) scale(1)}
+  .rht.hide{opacity:0; transform:translateY(-18px) scale(.9)}
+  .rht .ic{width:20px;height:20px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .rht .ic svg{width:20px;height:20px; display:block}
+  .rht-msg{line-height:1.3}
+  .rht-spin{width:18px;height:18px;border-radius:50%;border:2.5px solid #e6e6e6;border-top-color:#5c86ff;animation:rht-rot .7s linear infinite}
+  @keyframes rht-rot{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){ .rht{transition:opacity .2s} .rht-spin{animation-duration:1.2s} }
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
@@ -249,7 +258,7 @@
   </button>
 </nav>
 
-<div class="toast" id="toast"></div>
+<div class="toaster" id="toaster" aria-live="polite" aria-atomic="false"></div>
 
 <script>
 "use strict";
@@ -288,7 +297,7 @@
   }
   function saveState(){
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-    catch(e){ toast("Couldn't save (storage blocked)"); }
+    catch(e){ Toast.error("Couldn't save — storage looks blocked"); }
   }
   function uid(){ return Math.random().toString(36).slice(2,9); }
   function defaultTermEnd(){ const d=new Date(); d.setDate(d.getDate()+18*7); return isoDate(d); }
@@ -452,11 +461,11 @@
   function saveForm(){
     const name=el("pName").value.trim()||"Class";
     const start=el("pStart").value, end=el("pEnd").value;
-    if(!start||!end){ toast("Pick a start and end time"); return; }
-    if(hmToMin(end)<=hmToMin(start)){ toast("End must be after start"); return; }
-    if(!selectedDays.length){ toast("Pick at least one day"); return; }
-    if(editingId){ Object.assign(state.periods.find(x=>x.id===editingId),{name,start,end,days:selectedDays.slice()}); toast("Class updated"); }
-    else { state.periods.push({id:uid(),name,start,end,days:selectedDays.slice()}); toast("Class added"); }
+    if(!start||!end){ Toast.error("Pick a start and end time"); return; }
+    if(hmToMin(end)<=hmToMin(start)){ Toast.error("End time must be after the start"); return; }
+    if(!selectedDays.length){ Toast.error("Pick at least one day"); return; }
+    if(editingId){ Object.assign(state.periods.find(x=>x.id===editingId),{name,start,end,days:selectedDays.slice()}); Toast.success("Class updated"); }
+    else { state.periods.push({id:uid(),name,start,end,days:selectedDays.slice()}); Toast.success("Class added"); }
     saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); resetForm();
   }
   function loadExample(){
@@ -464,7 +473,7 @@
       ["Period 3","10:30","11:20"],["Period 4","11:25","12:15"],["Lunch","12:15","12:55"],
       ["Period 5","12:55","13:45"],["Period 6","13:50","14:40"]];
     state.periods=base.map(([n,s,e])=>({id:uid(),name:n,start:s,end:e,days:[1,2,3,4,5]}));
-    saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); toast("Loaded a sample day — edit it to match yours");
+    saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); Toast.success("Loaded a sample day — edit it to match yours");
   }
 
   // ---------- ICS ----------
@@ -498,10 +507,10 @@
     lines.push("END:VCALENDAR"); return lines.join("\r\n");
   }
   function downloadICS(){
-    if(!state.periods.length){ toast("Add some classes first"); return; }
+    if(!state.periods.length){ Toast.error("Add some classes first"); return; }
     const blob=new Blob([buildICS()],{type:"text/calendar"}); const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download="school-schedule.ics"; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),2000); toast("Opening calendar file — choose “Add All”");
+    setTimeout(()=>URL.revokeObjectURL(url),2000); Toast.success("Opening calendar file — choose “Add All”");
   }
 
   // ---------- notifications ----------
@@ -529,12 +538,42 @@
   // ---------- data ----------
   function exportData(){
     const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download="my-schedule-backup.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); toast("Backup downloaded");
+    const a=document.createElement("a"); a.href=url; a.download="my-schedule-backup.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); Toast.success("Backup downloaded");
   }
-  function importData(file){ const r=new FileReader(); r.onload=()=>{ try{ state=normalize(JSON.parse(r.result)); saveState(); renderEverything(); toast("Schedule imported"); }catch(e){ toast("That file didn't look right"); } }; r.readAsText(file); }
+  function importData(file){ const r=new FileReader(); r.onload=()=>{ try{ state=normalize(JSON.parse(r.result)); saveState(); renderEverything(); Toast.success("Schedule imported"); }catch(e){ Toast.error("That file didn't look right"); } }; r.readAsText(file); }
 
-  let toastTimer=null;
-  function toast(msg){ const t=el("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2600); }
+  // react-hot-toast–style notifications (vanilla)
+  const Toast = (function(){
+    let seq=0; const items=new Map();
+    function icon(type){
+      if(type==="success") return '<div class="ic"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#30c450"/><path d="M5.8 10.4l2.6 2.6L14.3 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+      if(type==="error") return '<div class="ic"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="#ff4b4b"/><path d="M6.9 6.9l6.2 6.2M13.1 6.9l-6.2 6.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>';
+      if(type==="loading") return '<div class="ic"><span class="rht-spin"></span></div>';
+      return "";
+    }
+    function show(msg, type, opts){
+      opts=opts||{}; const id=opts.id || ("t"+(++seq));
+      let node=items.get(id);
+      if(!node){ node=document.createElement("div"); node.setAttribute("role","status"); el("toaster").appendChild(node); items.set(id,node); }
+      clearTimeout(node._t);
+      node.className="rht"+(type?(" rht-"+type):"");
+      node.innerHTML=icon(type)+'<div class="rht-msg">'+escapeHtml(msg)+'</div>';
+      node.onclick=()=>dismiss(id);
+      requestAnimationFrame(()=>node.classList.add("show"));
+      const dur = opts.duration!=null ? opts.duration : (type==="error"?3800:(type==="loading"?Infinity:2600));
+      if(isFinite(dur)) node._t=setTimeout(()=>dismiss(id), dur);
+      return id;
+    }
+    function dismiss(id){ const node=items.get(id); if(!node) return; clearTimeout(node._t); node.classList.remove("show"); node.classList.add("hide"); setTimeout(()=>{ node.remove(); items.delete(id); }, 360); }
+    return {
+      success:(m,o)=>show(m,"success",o),
+      error:(m,o)=>show(m,"error",o),
+      loading:(m,o)=>show(m,"loading",o),
+      info:(m,o)=>show(m,"",o),
+      dismiss
+    };
+  })();
+  function toast(msg){ return Toast.info(msg); }
 
   function switchView(name){
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
@@ -556,14 +595,14 @@
     el("periodList").addEventListener("click", e=>{
       const btn=e.target.closest("button[data-act]"); if(!btn) return; const id=btn.closest(".pcard").dataset.id;
       if(btn.dataset.act==="edit") startEdit(id);
-      else if(btn.dataset.act==="del"){ state.periods=state.periods.filter(p=>p.id!==id); saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); toast("Deleted"); if(editingId===id) resetForm(); }
+      else if(btn.dataset.act==="del"){ state.periods=state.periods.filter(p=>p.id!==id); saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); Toast.success("Class deleted"); if(editingId===id) resetForm(); }
     });
     el("lead").onchange=()=>{ state.settings.lead=Number(el("lead").value); saveState(); scheduleNotifications(); renderNow(); };
     el("termEnd").onchange=()=>{ state.settings.termEnd=el("termEnd").value||defaultTermEnd(); saveState(); };
     el("icsBtn").onclick=downloadICS; el("notifyBtn").onclick=toggleNotify;
     el("exportBtn").onclick=exportData; el("importBtn").onclick=()=>el("importFile").click();
     el("importFile").onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
-    el("clearBtn").onclick=()=>{ if(confirm("Delete your whole schedule? This can't be undone.")){ state={periods:[],settings:{lead:5,termEnd:defaultTermEnd(),notify:false}}; saveState(); renderEverything(); toast("Cleared"); } };
+    el("clearBtn").onclick=()=>{ if(confirm("Delete your whole schedule? This can't be undone.")){ state={periods:[],settings:{lead:5,termEnd:defaultTermEnd(),notify:false}}; saveState(); renderEverything(); Toast.success("Everything cleared"); } };
     renderNow(); setInterval(renderNow,1000);
     document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) scheduleNotifications(); });
     if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
