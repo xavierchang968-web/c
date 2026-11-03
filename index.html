@@ -3,217 +3,183 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Bell Schedule</title>
-<meta name="description" content="Your school day at a glance: current class, a live Apple-style countdown to the next bell, and reminders before each period." />
+<title>My Schedule</title>
+<meta name="description" content="See your current class, exactly how long until the next bell, and your full daily schedule — with reminders before each period." />
 <link rel="manifest" href="manifest.webmanifest" />
-<meta name="theme-color" content="#060a16" />
+<meta name="theme-color" content="#0f1420" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Bells" />
+<meta name="apple-mobile-web-app-title" content="Schedule" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <link rel="icon" href="icons/icon-192.png" />
 <style>
   :root{
-    /* dark is the default */
-    --bg:#060a16; --text:#f4f7ff; --muted:rgba(232,238,255,.62);
-    --glass:rgba(255,255,255,.08); --glass-2:rgba(255,255,255,.14);
-    --glass-stroke:rgba(255,255,255,.18); --line:rgba(255,255,255,.12);
-    --accent:#0a84ff; --accent-2:#30d158; --warn:#ffd426; --danger:#ff6961;
-    --ring-bg:rgba(255,255,255,.12);
-    --shadow:0 10px 34px rgba(0,0,0,.38);
-    --radius:24px; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
-    --blob-op:.55;
-  }
-  @media (prefers-color-scheme: light){
-    :root:not([data-theme="dark"]){
-      --bg:#e8edf8; --text:#0a0f1e; --muted:#5a668c;
-      --glass:rgba(255,255,255,.6); --glass-2:rgba(255,255,255,.78);
-      --glass-stroke:rgba(255,255,255,.9); --line:rgba(10,20,50,.1);
-      --accent:#0a84ff; --accent-2:#2bb24c; --warn:#9a6b00; --danger:#d9342b;
-      --ring-bg:rgba(10,20,50,.1);
-      --shadow:0 10px 30px rgba(31,45,80,.18);
-      --blob-op:.4;
-    }
+    --bg:#0f1420; --bg-2:#161d2b; --panel:#141b29; --input:#0e1524;
+    --pcard:#17213b; --pcard-break:#20262f;
+    --text:#f3f5f9; --muted:#8b94a6; --muted-2:#6c7589;
+    --accent:#3d6ef5; --accent-text:#5c86ff; --accent-dim:rgba(61,110,245,.15);
+    --line:#262d3b; --line-2:#333b4c; --ring-track:#212838;
+    --danger:#ff6b6b;
+    --radius:20px; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
     background:var(--bg); color:var(--text);
     font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; min-height:100vh; position:relative; overflow-x:hidden;
-    padding-top:var(--safe-top); padding-bottom:calc(76px + var(--safe-bottom));
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+    padding-top:var(--safe-top); padding-bottom:calc(80px + var(--safe-bottom));
   }
-  /* Liquid-glass backdrop: soft colored light behind the frosted panels */
-  body::before{
-    content:""; position:fixed; inset:-25% -15% -15% -15%; z-index:-2; pointer-events:none;
-    background:
-      radial-gradient(38% 40% at 18% 16%, rgba(10,132,255,var(--blob-op)), transparent 70%),
-      radial-gradient(34% 36% at 86% 12%, rgba(94,92,230,var(--blob-op)), transparent 70%),
-      radial-gradient(46% 48% at 80% 82%, rgba(48,209,88,calc(var(--blob-op) * .8)), transparent 72%),
-      radial-gradient(40% 42% at 12% 88%, rgba(255,55,95,calc(var(--blob-op) * .75)), transparent 72%);
-    filter:blur(42px) saturate(150%);
-    animation:drift 26s ease-in-out infinite alternate;
-  }
-  @keyframes drift{ from{transform:translate3d(0,0,0) scale(1)} to{transform:translate3d(0,-2%,0) scale(1.06)} }
-  @media (prefers-reduced-motion: reduce){ body::before{animation:none} }
+  .wrap{max-width:560px; margin:0 auto; padding:18px 18px 8px;}
 
-  .wrap{max-width:560px; margin:0 auto; padding:16px; position:relative; z-index:1}
-  header{display:flex; align-items:center; gap:10px; margin:6px 2px 16px;}
-  header .logo{width:30px;height:30px;flex:0 0 auto; border-radius:8px; box-shadow:var(--shadow)}
-  header h1{font-size:19px; margin:0; letter-spacing:.2px; font-weight:700}
-  header .clock{margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:600}
+  /* ---------- Today header ---------- */
+  .day-head{display:flex; align-items:flex-start; gap:12px; margin:6px 2px 10px}
+  .day-head .titles{flex:1; min-width:0}
+  .day-head .date{font-size:27px; font-weight:800; letter-spacing:-.3px; line-height:1.1}
+  .day-head .sub{color:var(--muted); font-size:15px; margin-top:4px}
+  .clock-pill{display:inline-flex; align-items:center; gap:7px; background:var(--bg-2); border:1px solid var(--line);
+    padding:9px 13px; border-radius:13px; font-weight:700; font-variant-numeric:tabular-nums; font-size:15px; white-space:nowrap}
+  .clock-pill svg{width:16px;height:16px;opacity:.8}
 
-  .glass{
-    background:var(--glass); border:1px solid var(--glass-stroke); border-radius:var(--radius);
-    -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
-    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(255,255,255,.06);
-  }
-  .card{ padding:18px; margin-bottom:14px; }
-  .card h2{font-size:14px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:2px 2px 12px}
-  .muted{color:var(--muted)}
-
-  /* Status hero */
-  .hero{display:flex; flex-direction:column; align-items:center; gap:4px; padding:24px 18px 22px; overflow:hidden; position:relative}
-  .hero::after{ /* top specular sheen */
-    content:""; position:absolute; left:-20%; right:-20%; top:-60%; height:120%;
-    background:radial-gradient(60% 60% at 50% 0%, rgba(255,255,255,.18), transparent 70%);
-    pointer-events:none;
-  }
-  .ringwrap{position:relative; width:200px; height:200px; margin:6px 0 10px}
-  .ringwrap svg{transform:rotate(-90deg); overflow:visible}
-  #ringFg{transition:stroke-dashoffset .9s cubic-bezier(.25,.8,.25,1), stroke .4s ease; filter:drop-shadow(0 2px 10px rgba(10,132,255,.45))}
-  .ring-label{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 14px}
-
-  /* Apple-style rolling digit clock */
-  .clockface{display:flex; align-items:center; justify-content:center; gap:0; transform-origin:center; height:54px}
-  .reel{height:54px; width:31px; overflow:hidden; position:relative}
+  /* ---------- Ring hero ---------- */
+  .hero{display:flex; flex-direction:column; align-items:center; padding:20px 0 6px}
+  .ringwrap{position:relative; width:272px; height:272px; max-width:78vw; aspect-ratio:1}
+  .ringwrap svg{width:100%; height:100%; transform:rotate(-90deg)}
+  #ringTrack{stroke:var(--ring-track)}
+  #ringFg{transition:stroke-dashoffset .9s cubic-bezier(.25,.8,.25,1); filter:drop-shadow(0 2px 12px rgba(61,110,245,.5))}
+  .ring-label{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 20px}
+  .rl-top{color:var(--accent-text); font-size:15px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; min-height:18px}
+  .clockface{display:flex; align-items:center; justify-content:center; transform-origin:center; height:60px; margin:6px 0 2px}
+  .clockface.hidden{display:none}
+  .reel{height:60px; width:35px; overflow:hidden; position:relative}
   .reel .col{display:flex; flex-direction:column; will-change:transform; transition:transform .55s cubic-bezier(.33,1.4,.45,1)}
-  .reel .col span{height:54px; line-height:54px; text-align:center; font-size:48px; font-weight:800; letter-spacing:-1px; font-variant-numeric:tabular-nums}
-  .sep{height:54px; width:15px; display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:800; opacity:.85; transform:translateY(-3px)}
-  .cd-sub{font-size:13px; color:var(--muted); margin-top:4px; letter-spacing:.02em}
+  .reel .col span{height:60px; line-height:60px; text-align:center; font-size:54px; font-weight:800; letter-spacing:-1px; font-variant-numeric:tabular-nums; color:var(--text)}
+  .sep{height:60px; width:16px; display:flex; align-items:center; justify-content:center; font-size:44px; font-weight:700; opacity:.9; transform:translateY(-4px)}
+  .rl-end{color:var(--muted); font-size:19px; font-weight:600; font-variant-numeric:tabular-nums; min-height:22px}
 
-  .statusline{font-size:21px; font-weight:700; text-align:center; margin-top:8px}
-  .statussub{color:var(--muted); text-align:center; margin-top:2px}
-  .pill{display:inline-block; font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; margin-top:10px;
-        background:var(--glass-2); border:1px solid var(--glass-stroke); color:var(--muted);
-        -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
-  .pill.now{color:#04210f; background:var(--accent-2); border-color:transparent}
-  .pill.soon{color:#2a1c00; background:var(--warn); border-color:transparent}
+  .class-block{text-align:center; margin:14px 0 6px}
+  .class-name{font-size:28px; font-weight:800; letter-spacing:-.3px}
+  .class-meta{color:var(--muted); font-size:15px; margin-top:4px}
 
-  /* Today list */
-  .row{display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:14px; border:1px solid transparent}
-  .row + .row{margin-top:4px}
-  .row .time{font-variant-numeric:tabular-nums; color:var(--muted); font-weight:600; width:120px; flex:0 0 auto; font-size:14px}
-  .row .name{font-weight:600}
-  .row.current{background:var(--glass-2); border-color:var(--glass-stroke)}
-  .row.current .name{color:var(--accent)}
-  .row.done{opacity:.42}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:0 0 auto}
-  .row.current .dot{background:var(--accent-2); box-shadow:0 0 8px var(--accent-2)}
+  /* ---------- Panels / sections ---------- */
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin:14px 0}
+  .panel h2{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 12px}
+  .section-title{font-size:30px; font-weight:800; letter-spacing:-.4px; margin:6px 2px 14px}
+  .day-label{display:flex; align-items:center; gap:12px; font-size:20px; font-weight:800; margin:4px 2px 12px}
+  .day-label::after{content:""; height:1px; flex:1; background:var(--line)}
+
+  /* Today list (compact) */
+  .trow{display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; border:1px solid transparent}
+  .trow + .trow{margin-top:4px}
+  .trow .tn{width:26px; height:26px; flex:0 0 auto; border-radius:8px; background:var(--accent-dim); color:var(--accent-text); font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center}
+  .trow .tt{font-variant-numeric:tabular-nums; color:var(--muted); font-size:13px; width:120px; flex:0 0 auto}
+  .trow .tnm{font-weight:600}
+  .trow.current{background:var(--bg-2)}
+  .trow.current .tnm{color:var(--accent-text)}
+  .trow.done{opacity:.4}
+
+  /* Schedule period cards */
+  .pcard{position:relative; text-align:center; padding:20px 16px; border:2px solid var(--accent); border-radius:18px; background:var(--pcard); margin-bottom:12px}
+  .pcard.break{border-color:var(--line-2); background:var(--pcard-break)}
+  .pcard .num{font-size:34px; font-weight:800; line-height:1}
+  .pcard .nm{font-size:17px; color:#e7ebf3; margin-top:6px; font-weight:600}
+  .pcard .tm{font-size:12px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums}
+  .pcard .acts{position:absolute; top:8px; right:8px; display:flex; gap:2px}
+  .iconbtn{background:transparent;border:none;color:var(--muted);font-size:16px;padding:7px;line-height:1;border-radius:8px}
+  .iconbtn:active{transform:scale(.9)}
 
   /* Forms */
   label{display:block; font-size:13px; color:var(--muted); margin:0 0 5px 2px}
-  input,select{
-    width:100%; padding:12px; border-radius:13px; border:1px solid var(--glass-stroke);
-    background:var(--glass-2); color:var(--text); font-size:16px; appearance:none;
-    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)
-  }
-  input:focus,select:focus{outline:2px solid var(--accent); outline-offset:1px}
+  input,select{width:100%; padding:12px; border-radius:12px; border:1px solid var(--line); background:var(--input); color:var(--text); font-size:16px; appearance:none}
+  input:focus,select:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .field{margin-bottom:12px}
   .days{display:flex; gap:6px; flex-wrap:wrap}
-  .day{flex:1 1 auto; min-width:40px; text-align:center; padding:10px 0; border-radius:12px; border:1px solid var(--glass-stroke); background:var(--glass-2); color:var(--muted); font-weight:700; font-size:13px; cursor:pointer; user-select:none; transition:transform .1s ease}
-  .day:active{transform:scale(.94)}
-  .day.on{background:var(--accent); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(10,132,255,.4)}
+  .day{flex:1 1 auto; min-width:40px; text-align:center; padding:10px 0; border-radius:11px; border:1px solid var(--line); background:var(--input); color:var(--muted); font-weight:700; font-size:13px; cursor:pointer; user-select:none}
+  .day.on{background:var(--accent); color:#fff; border-color:transparent}
 
   button{font:inherit; cursor:pointer}
-  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px 16px; border-radius:15px; border:1px solid var(--glass-stroke); background:var(--glass-2); color:var(--text); font-weight:700; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); transition:transform .1s ease}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px 16px; border-radius:13px; border:1px solid var(--line); background:var(--bg-2); color:var(--text); font-weight:700}
   .btn:active{transform:scale(.98)}
-  .btn.primary{background:var(--accent); color:#fff; border-color:transparent; box-shadow:0 6px 18px rgba(10,132,255,.4)}
-  .btn.good{background:var(--accent-2); color:#04210f; border-color:transparent; box-shadow:0 6px 18px rgba(48,209,88,.35)}
+  .btn.primary{background:var(--accent); color:#fff; border-color:transparent}
+  .btn.good{background:var(--accent); color:#fff; border-color:transparent}
   .btn.ghost{background:transparent}
-  .btn.small{width:auto; padding:9px 13px; font-size:14px; border-radius:12px}
+  .btn.small{width:auto; padding:9px 13px; font-size:14px; border-radius:11px}
   .btn + .btn{margin-top:10px}
   .btnrow{display:flex; gap:10px}
   .btnrow .btn{margin-top:0}
-
-  .plist .pitem{display:flex; align-items:center; gap:10px; padding:12px; border:1px solid var(--glass-stroke); border-radius:14px; background:var(--glass-2); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
-  .plist .pitem + .pitem{margin-top:8px}
-  .plist .pitem .meta{flex:1 1 auto; min-width:0}
-  .plist .pitem .meta .nm{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .plist .pitem .meta .tm{color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums}
-  .iconbtn{background:transparent;border:none;color:var(--muted);font-size:18px;padding:6px;line-height:1;border-radius:8px}
-  .iconbtn:active{transform:scale(.9)}
-
-  .hint{font-size:13px; color:var(--muted); background:var(--glass-2); border:1px solid var(--glass-stroke); border-radius:13px; padding:12px; margin-top:10px}
+  .hint{font-size:13px; color:var(--muted); background:var(--input); border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px}
   .hint b{color:var(--text)}
   .spacer{height:4px}
 
-  nav.tabs{
-    position:fixed; left:0; right:0; bottom:0; z-index:20;
-    display:flex; background:var(--glass); border-top:1px solid var(--glass-stroke);
-    -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%);
-    padding-bottom:var(--safe-bottom); box-shadow:0 -6px 24px rgba(0,0,0,.18);
-  }
-  nav.tabs button{flex:1; background:none; border:none; color:var(--muted); padding:12px 0 10px; font-size:11px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:3px}
-  nav.tabs button .ic{font-size:20px; line-height:1}
-  nav.tabs button.active{color:var(--accent)}
+  nav.tabs{position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex; justify-content:center; gap:10px;
+    background:rgba(15,20,32,.86); -webkit-backdrop-filter:blur(18px) saturate(160%); backdrop-filter:blur(18px) saturate(160%);
+    border-top:1px solid var(--line); padding-bottom:var(--safe-bottom)}
+  nav.tabs button{flex:0 0 auto; min-width:120px; background:none; border:none; color:var(--muted); padding:12px 10px 10px; font-size:11px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:4px}
+  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button.active{color:var(--accent-text)}
 
   .view{display:none}
   .view.active{display:block}
-  .emptyhint{text-align:center; color:var(--muted); padding:28px 10px}
-  .toast{position:fixed; left:50%; bottom:calc(88px + var(--safe-bottom)); transform:translateX(-50%); background:var(--glass); color:var(--text); border:1px solid var(--glass-stroke); -webkit-backdrop-filter:blur(16px) saturate(180%); backdrop-filter:blur(16px) saturate(180%); padding:11px 18px; border-radius:999px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; z-index:30; max-width:90%; box-shadow:var(--shadow)}
+  .emptyhint{text-align:center; color:var(--muted); padding:26px 10px}
+  .toast{position:fixed; left:50%; bottom:calc(92px + var(--safe-bottom)); transform:translateX(-50%); background:#eef1f7; color:#0f1420; padding:11px 18px; border-radius:999px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; z-index:30; max-width:90%}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <img class="logo" src="icons/icon-192.png" alt="" />
-    <h1>Bell Schedule</h1>
-    <span class="clock" id="headerClock">--:--</span>
-  </header>
 
-  <!-- NOW VIEW -->
+  <!-- TODAY VIEW -->
   <section class="view active" id="view-now">
-    <div class="glass card hero" id="heroCard">
-      <div class="ringwrap">
-        <svg width="200" height="200" viewBox="0 0 200 200" aria-hidden="true">
-          <circle cx="100" cy="100" r="88" fill="none" stroke="var(--ring-bg)" stroke-width="14"/>
-          <circle id="ringFg" cx="100" cy="100" r="88" fill="none" stroke="var(--accent)" stroke-width="14"
-                  stroke-linecap="round" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
-        </svg>
-        <div class="ring-label">
-          <div class="clockface" id="clockface" role="timer" aria-label="countdown">0:00</div>
-          <div class="cd-sub" id="countdownSub">next bell</div>
-        </div>
+    <div class="day-head">
+      <div class="titles">
+        <div class="date" id="dayDate">Today</div>
+        <div class="sub" id="daySub">Your schedule</div>
       </div>
-      <div class="statusline" id="statusLine">Set up your schedule</div>
-      <div class="statussub" id="statusSub">Head to the Schedule tab to add your periods.</div>
-      <div id="statusPill"></div>
+      <span class="clock-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="dayClock">--:--</span></span>
     </div>
 
-    <div class="glass card today">
+    <div class="hero">
+      <div class="ringwrap">
+        <svg viewBox="0 0 272 272" aria-hidden="true">
+          <circle id="ringTrack" cx="136" cy="136" r="120" fill="none" stroke-width="16"/>
+          <circle id="ringFg" cx="136" cy="136" r="120" fill="none" stroke="var(--accent)" stroke-width="16"
+                  stroke-linecap="round" stroke-dasharray="753.98" stroke-dashoffset="753.98"/>
+        </svg>
+        <div class="ring-label">
+          <div class="rl-top" id="ringLabel"></div>
+          <div class="clockface" id="clockface" role="timer" aria-label="countdown">0:00</div>
+          <div class="rl-end" id="ringEnd"></div>
+        </div>
+      </div>
+      <div class="class-block">
+        <div class="class-name" id="className">Set up your schedule</div>
+        <div class="class-meta" id="classMeta">Add your classes on the My Schedule tab.</div>
+      </div>
+    </div>
+
+    <div class="panel" id="todayPanel">
       <h2>Today</h2>
-      <div id="todayList"><div class="emptyhint">No periods yet.</div></div>
+      <div id="todayList"><div class="emptyhint">No classes yet.</div></div>
     </div>
   </section>
 
-  <!-- SCHEDULE VIEW -->
+  <!-- MY SCHEDULE VIEW -->
   <section class="view" id="view-schedule">
-    <div class="glass card">
-      <h2 style="margin-top:0">Your periods</h2>
-      <div class="plist" id="periodList"></div>
-      <div class="spacer"></div>
-      <button class="btn small ghost" id="addExampleBtn" style="margin-top:10px">+ Load a typical day to start</button>
+    <div class="section-title">My Schedule</div>
+
+    <div class="panel">
+      <div class="day-label">Your classes</div>
+      <div id="periodList"></div>
+      <button class="btn small ghost" id="addExampleBtn" style="margin-top:6px">+ Load a typical day to start</button>
     </div>
 
-    <div class="glass card">
-      <h2 style="margin-top:0" id="formTitle">Add a period</h2>
+    <div class="panel">
+      <h2 id="formTitle">Add a class</h2>
       <div class="field">
         <label for="pName">Name</label>
-        <input id="pName" type="text" placeholder="e.g. Period 1 – Biology" maxlength="40" />
+        <input id="pName" type="text" placeholder="e.g. CP Chemistry" maxlength="40" />
       </div>
       <div class="grid2">
         <div class="field">
@@ -230,13 +196,13 @@
         <div class="days" id="dayPicker"></div>
       </div>
       <div class="btnrow">
-        <button class="btn primary" id="saveBtn">Add period</button>
+        <button class="btn primary" id="saveBtn">Add class</button>
         <button class="btn ghost" id="cancelEditBtn" style="display:none; flex:0 0 auto; width:auto; padding:14px 16px">Cancel</button>
       </div>
     </div>
 
-    <div class="glass card">
-      <h2 style="margin-top:0">Reminders</h2>
+    <div class="panel">
+      <h2>Reminders</h2>
       <div class="field">
         <label for="lead">Alert me before each bell</label>
         <select id="lead">
@@ -260,10 +226,10 @@
       <div class="hint" id="notifyHint" style="display:none"></div>
     </div>
 
-    <div class="glass card">
-      <h2 style="margin-top:0">Data</h2>
+    <div class="panel">
+      <h2>Data</h2>
       <div class="btnrow">
-        <button class="btn ghost small" id="exportBtn">Export schedule</button>
+        <button class="btn ghost small" id="exportBtn">Export</button>
         <button class="btn ghost small" id="importBtn">Import</button>
         <button class="btn ghost small" id="clearBtn" style="color:var(--danger)">Clear all</button>
       </div>
@@ -273,8 +239,14 @@
 </div>
 
 <nav class="tabs">
-  <button id="tabNow" class="active" data-view="now"><span class="ic">⏱️</span>Now</button>
-  <button id="tabSchedule" data-view="schedule"><span class="ic">🗓️</span>Schedule</button>
+  <button id="tabNow" class="active" data-view="now">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    Today
+  </button>
+  <button id="tabSchedule" data-view="schedule">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+    My Schedule
+  </button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -284,10 +256,12 @@
 (function(){
   const STORE_KEY = "bellschedule.v1";
   const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const RING_CIRC = 2 * Math.PI * 88; // 552.92
-  const DH = 54; // digit cell height, matches CSS
+  const WEEKDAY_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const RING_CIRC = 2 * Math.PI * 120; // 753.98
+  const DH = 60;
+  const BREAK_RE = /break|lunch|nutrition|advisory|passing|recess|homeroom|flex|study ?hall|free|brunch|snack/i;
 
-  // ---------- state ----------
   let state = loadState();
   let editingId = null;
   let selectedDays = [1,2,3,4,5];
@@ -306,7 +280,7 @@
     if(!s.settings.termEnd) s.settings.termEnd = defaultTermEnd();
     if(s.settings.notify == null) s.settings.notify = false;
     s.periods = (s.periods||[]).map(p=>({
-      id: p.id || uid(), name: p.name || "Period",
+      id: p.id || uid(), name: p.name || "Class",
       start: p.start || "08:00", end: p.end || "09:00",
       days: Array.isArray(p.days) && p.days.length ? p.days : [1,2,3,4,5]
     }));
@@ -317,427 +291,281 @@
     catch(e){ toast("Couldn't save (storage blocked)"); }
   }
   function uid(){ return Math.random().toString(36).slice(2,9); }
-  function defaultTermEnd(){
-    const d = new Date(); d.setDate(d.getDate()+ 18*7);
-    return isoDate(d);
-  }
+  function defaultTermEnd(){ const d=new Date(); d.setDate(d.getDate()+18*7); return isoDate(d); }
 
-  // ---------- time helpers ----------
-  function isoDate(d){
-    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }
+  function isoDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function hmToMin(hm){ const [h,m]=hm.split(":").map(Number); return h*60+m; }
-  function minToLabel(min){
-    let h=Math.floor(min/60), m=min%60; const ap = h>=12?"PM":"AM";
-    let hh = h%12; if(hh===0) hh=12;
-    return hh+":"+String(m).padStart(2,"0")+" "+ap;
-  }
-  function fmtClock(d){
-    let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; let hh=h%12; if(hh===0) hh=12;
-    return hh+":"+String(m).padStart(2,"0")+" "+ap;
-  }
+  function minToLabel(min){ let h=Math.floor(min/60), m=min%60; const ap=h>=12?"PM":"AM"; let hh=h%12; if(hh===0) hh=12; return hh+":"+String(m).padStart(2,"0")+" "+ap; }
+  function fmtClock(d){ let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?"PM":"AM"; let hh=h%12; if(hh===0) hh=12; return hh+":"+String(m).padStart(2,"0")+" "+ap; }
   function fmtCountdown(sec){
-    sec = Math.max(0, Math.round(sec));
+    sec=Math.max(0,Math.round(sec));
     const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
     if(h>0) return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
     return m+":"+String(s).padStart(2,"0");
   }
+  function ordinal(n){ const s=["th","st","nd","rd"], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+  function longDate(d){ return WEEKDAY_FULL[d.getDay()]+", "+MONTHS[d.getMonth()]+" "+ordinal(d.getDate()); }
 
-  // ---------- Apple-style rolling digit clock ----------
   const el = id => document.getElementById(id);
+
+  // numbering: real classes get 1,2,3…; breaks get their first letter
+  function dayNumbers(list){
+    const map={}; let n=0;
+    for(const p of list){
+      if(BREAK_RE.test(p.name)){ map[p.id]={label:(p.name.trim()[0]||"•").toUpperCase(), brk:true, n:null}; }
+      else { n++; map[p.id]={label:String(n), brk:false, n:n}; }
+    }
+    return map;
+  }
+
+  // ---------- rolling digit clock ----------
   function setClock(str){
     const face = el("clockface");
+    if(!str){ face.classList.add("hidden"); return; }
+    face.classList.remove("hidden");
     const sig = str.replace(/[0-9]/g,"D");
     if(face.dataset.sig !== sig){
-      face.dataset.sig = sig; face.innerHTML = "";
+      face.dataset.sig = sig; face.innerHTML="";
       for(const ch of str){
-        if(ch>="0" && ch<="9"){
+        if(ch>="0"&&ch<="9"){
           const r=document.createElement("div"); r.className="reel";
           const col=document.createElement("div"); col.className="col";
           for(let i=0;i<10;i++){ const sp=document.createElement("span"); sp.textContent=i; col.appendChild(sp); }
           r.appendChild(col); face.appendChild(r);
-        } else {
-          const s=document.createElement("div"); s.className="sep"; s.textContent=ch; face.appendChild(s);
-        }
+        } else { const s=document.createElement("div"); s.className="sep"; s.textContent=ch; face.appendChild(s); }
       }
-      face.style.transform = "none";
+      face.style.transform="none";
     }
-    const reels = face.getElementsByClassName("reel");
-    let ri=0;
-    for(const ch of str){
-      if(ch>="0" && ch<="9"){
-        const col = reels[ri].firstChild;
-        col.style.transform = "translateY(" + (-(Number(ch))*DH) + "px)";
-        ri++;
-      }
-    }
+    const reels=face.getElementsByClassName("reel"); let ri=0;
+    for(const ch of str){ if(ch>="0"&&ch<="9"){ reels[ri].firstChild.style.transform="translateY("+(-(Number(ch))*DH)+"px)"; ri++; } }
     face.setAttribute("aria-label", str);
-    // keep it inside the ring for long (H:MM:SS) values
-    const w = face.scrollWidth, max = 158;
-    face.style.transform = w > max ? "scale(" + (max/w).toFixed(3) + ")" : "none";
+    const w=face.scrollWidth, max=200; face.style.transform = w>max ? "scale("+(max/w).toFixed(3)+")" : "none";
   }
 
   // ---------- schedule logic ----------
-  function periodsForDay(dow){
-    return state.periods.filter(p=>p.days.includes(dow))
-      .slice().sort((a,b)=> hmToMin(a.start)-hmToMin(b.start));
-  }
-  function bellsForToday(list){
-    const bells=[];
-    list.forEach(p=>{
-      bells.push({min:hmToMin(p.start), kind:"start", period:p});
-      bells.push({min:hmToMin(p.end), kind:"end", period:p});
-    });
-    bells.sort((a,b)=>a.min-b.min);
-    return bells;
-  }
+  function periodsForDay(dow){ return state.periods.filter(p=>p.days.includes(dow)).slice().sort((a,b)=>hmToMin(a.start)-hmToMin(b.start)); }
+  function bellsForToday(list){ const b=[]; list.forEach(p=>{ b.push({min:hmToMin(p.start),kind:"start",period:p}); b.push({min:hmToMin(p.end),kind:"end",period:p}); }); b.sort((a,b)=>a.min-b.min); return b; }
   function computeNow(now){
-    const dow = now.getDay();
-    const nowMin = now.getHours()*60 + now.getMinutes() + now.getSeconds()/60;
-    const list = periodsForDay(dow);
-    const res = { list, dow, nowMin, inPeriod:null, nextBell:null, state:"empty" };
-    if(!list.length){ res.state = "empty"; return res; }
-    const cur = list.find(p=> hmToMin(p.start) <= nowMin && nowMin < hmToMin(p.end));
-    const bells = bellsForToday(list);
-    const nextBell = bells.find(b=> b.min > nowMin);
-    res.inPeriod = cur || null;
-    res.nextBell = nextBell || null;
-    if(cur){ res.state = "in"; }
-    else if(nowMin < hmToMin(list[0].start)){ res.state = "before"; }
-    else if(!nextBell){ res.state = "after"; }
-    else { res.state = "passing"; }
+    const dow=now.getDay(); const nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+    const list=periodsForDay(dow); const res={list,dow,nowMin,inPeriod:null,nextBell:null,state:"empty"};
+    if(!list.length) return res;
+    const cur=list.find(p=>hmToMin(p.start)<=nowMin && nowMin<hmToMin(p.end));
+    const nextBell=bellsForToday(list).find(b=>b.min>nowMin);
+    res.inPeriod=cur||null; res.nextBell=nextBell||null;
+    if(cur) res.state="in";
+    else if(nowMin<hmToMin(list[0].start)) res.state="before";
+    else if(!nextBell) res.state="after";
+    else res.state="passing";
     return res;
   }
 
-  // ---------- rendering ----------
+  // ---------- Today view ----------
   function renderNow(){
-    const now = new Date();
-    el("headerClock").textContent = fmtClock(now);
-    const info = computeNow(now);
+    const now=new Date();
+    const info=computeNow(now);
+    el("dayDate").textContent = longDate(now);
+    el("daySub").textContent = WEEKDAY_FULL[info.dow]+" Schedule";
+    el("dayClock").textContent = fmtClock(now);
+    const nums = dayNumbers(info.list);
     const nowMin = info.nowMin;
 
-    let ringFrac = 0, cd = "0:00", cdSub = "next bell";
-    if(info.state === "in" && info.inPeriod){
-      const s=hmToMin(info.inPeriod.start), e=hmToMin(info.inPeriod.end);
-      ringFrac = Math.min(1, Math.max(0,(nowMin-s)/(e-s)));
-      cd = fmtCountdown((e - nowMin)*60); cdSub = "left in class";
-    } else if(info.nextBell){
-      cd = fmtCountdown((info.nextBell.min - nowMin)*60);
-      cdSub = info.nextBell.kind === "start" ? "until it starts" : "until the bell";
-      const windowMin = 30;
-      ringFrac = Math.max(0, 1 - Math.min(1, (info.nextBell.min - nowMin)/windowMin));
+    let label="", cd="", endLabel="", frac=0, name="", meta="";
+    if(info.state==="in"){
+      const p=info.inPeriod, s=hmToMin(p.start), e=hmToMin(p.end);
+      frac=Math.min(1,Math.max(0,(nowMin-s)/(e-s)));
+      cd=fmtCountdown((e-nowMin)*60); label="ENDS IN"; endLabel=minToLabel(e);
+      name=p.name; meta=minToLabel(s)+"–"+minToLabel(e)+periodTag(nums[p.id]);
+    } else if(info.state==="before" || info.state==="passing"){
+      const nb=info.nextBell; cd=fmtCountdown((nb.min-nowMin)*60);
+      label = nb.kind==="start" ? "STARTS IN" : "ENDS IN"; endLabel=minToLabel(nb.min);
+      frac=Math.max(0,1-Math.min(1,(nb.min-nowMin)/30));
+      name = nb.kind==="start" ? ("Next: "+nb.period.name) : nb.period.name;
+      meta = (nb.kind==="start" ? "Starts at " : "Ends at ")+minToLabel(nb.min)+(nb.kind==="start"?periodTag(nums[nb.period.id]):"");
+    } else if(info.state==="after"){
+      label="ALL DONE"; cd=""; endLabel=""; frac=1; name="No more classes 🎉"; meta="Enjoy your evening.";
+    } else {
+      label=""; cd=""; endLabel=""; frac=0; name="Set up your schedule"; meta="Add your classes on the My Schedule tab.";
     }
+
+    el("ringLabel").textContent=label;
     setClock(cd);
-    el("countdownSub").textContent = cdSub;
-    const ring = el("ringFg");
-    ring.style.stroke = info.state==="in" ? "var(--accent-2)" : "var(--accent)";
-    ring.style.filter = info.state==="in"
-      ? "drop-shadow(0 2px 10px rgba(48,209,88,.45))"
-      : "drop-shadow(0 2px 10px rgba(10,132,255,.45))";
-    ring.setAttribute("stroke-dashoffset", String(RING_CIRC*(1-ringFrac)));
+    el("ringEnd").textContent=endLabel;
+    el("ringFg").setAttribute("stroke-dashoffset", String(RING_CIRC*(1-frac)));
+    el("className").textContent=name;
+    el("classMeta").textContent=meta;
 
-    let line="", sub="", pill="";
-    switch(info.state){
-      case "empty":
-        line="Set up your schedule"; sub="Add your periods on the Schedule tab."; break;
-      case "before":
-        line="Not started yet";
-        sub = info.list.length ? ("First bell at "+minToLabel(hmToMin(info.list[0].start))) : "";
-        pill = '<span class="pill">Good morning ☀️</span>'; break;
-      case "in":
-        line = info.inPeriod.name;
-        sub = minToLabel(hmToMin(info.inPeriod.start))+" – "+minToLabel(hmToMin(info.inPeriod.end));
-        pill = '<span class="pill now">In class now</span>'; break;
-      case "passing":{
-        const nb = info.nextBell;
-        line = (nb.kind==="start") ? ("Next: "+nb.period.name) : nb.period.name;
-        sub = (nb.kind==="start") ? ("Starts at "+minToLabel(nb.min)) : ("Bell at "+minToLabel(nb.min));
-        pill = (nb.min - nowMin) <= (state.settings.lead||5)
-          ? '<span class="pill soon">Get ready — heading up soon</span>'
-          : '<span class="pill">Passing period</span>';
-        break; }
-      case "after":
-        line="Done for today 🎉"; sub="No more bells. See you tomorrow."; break;
-    }
-    el("statusLine").textContent = line;
-    el("statusSub").textContent = sub;
-    el("statusPill").innerHTML = pill;
-    renderTodayList(info);
+    renderTodayList(info, nums);
   }
+  function periodTag(info){ return (info && !info.brk && info.n) ? "  •  "+ordinal(info.n)+" Period" : ""; }
 
-  function renderTodayList(info){
-    const host = el("todayList");
-    if(!info.list.length){
-      host.innerHTML = '<div class="emptyhint">Nothing scheduled for '+DAY_NAMES[info.dow]+'.</div>';
-      return;
-    }
-    const nowMin = info.nowMin;
+  function renderTodayList(info, nums){
+    const host=el("todayList");
+    if(!info.list.length){ host.innerHTML='<div class="emptyhint">Nothing scheduled for '+WEEKDAY_FULL[info.dow]+'.</div>'; return; }
+    const nowMin=info.nowMin;
     host.innerHTML = info.list.map(p=>{
       const s=hmToMin(p.start), e=hmToMin(p.end);
-      const isNow = s<=nowMin && nowMin<e;
-      const done = nowMin>=e;
-      const cls = isNow ? "row current" : (done ? "row done" : "row");
-      return '<div class="'+cls+'"><span class="dot"></span>'
-        +'<span class="time">'+minToLabel(s)+' – '+minToLabel(e)+'</span>'
-        +'<span class="name">'+escapeHtml(p.name)+'</span></div>';
+      const isNow=s<=nowMin&&nowMin<e, done=nowMin>=e;
+      const cls = isNow ? "trow current" : (done ? "trow done" : "trow");
+      const tag = nums[p.id].label;
+      return '<div class="'+cls+'"><span class="tn">'+tag+'</span>'
+        +'<span class="tt">'+minToLabel(s)+'–'+minToLabel(e)+'</span>'
+        +'<span class="tnm">'+escapeHtml(p.name)+'</span></div>';
     }).join("");
   }
 
+  // ---------- My Schedule view ----------
   function renderPeriodList(){
-    const host = el("periodList");
-    if(!state.periods.length){
-      host.innerHTML = '<div class="emptyhint">No periods yet. Add one below, or load a typical day.</div>';
-      return;
-    }
-    const sorted = state.periods.slice().sort((a,b)=> hmToMin(a.start)-hmToMin(b.start));
+    const host=el("periodList");
+    if(!state.periods.length){ host.innerHTML='<div class="emptyhint">No classes yet. Add one below, or load a typical day.</div>'; return; }
+    const sorted=state.periods.slice().sort((a,b)=>hmToMin(a.start)-hmToMin(b.start));
+    const nums=dayNumbers(sorted);
     host.innerHTML = sorted.map(p=>{
-      const days = p.days.slice().sort().map(d=>DAY_NAMES[d]).join(" ");
-      return '<div class="pitem" data-id="'+p.id+'">'
-        +'<div class="meta"><div class="nm">'+escapeHtml(p.name)+'</div>'
-        +'<div class="tm">'+minToLabel(hmToMin(p.start))+' – '+minToLabel(hmToMin(p.end))+' · '+days+'</div></div>'
-        +'<button class="iconbtn" data-act="edit" title="Edit">✏️</button>'
-        +'<button class="iconbtn" data-act="del" title="Delete">🗑️</button>'
+      const info=nums[p.id];
+      const days=p.days.slice().sort().map(d=>DAY_NAMES[d]).join(" ");
+      return '<div class="pcard'+(info.brk?' break':'')+'" data-id="'+p.id+'">'
+        +'<div class="acts"><button class="iconbtn" data-act="edit" aria-label="Edit">✏️</button>'
+        +'<button class="iconbtn" data-act="del" aria-label="Delete">🗑️</button></div>'
+        +'<div class="num">'+info.label+'</div>'
+        +'<div class="nm">'+escapeHtml(p.name)+'</div>'
+        +'<div class="tm">'+minToLabel(hmToMin(p.start))+'–'+minToLabel(hmToMin(p.end))+' · '+days+'</div>'
         +'</div>';
     }).join("");
   }
 
-  function renderDayPicker(){
-    el("dayPicker").innerHTML = [1,2,3,4,5,6,0].map(d=>
-      '<div class="day'+(selectedDays.includes(d)?" on":"")+'" data-day="'+d+'">'+DAY_NAMES[d]+'</div>'
-    ).join("");
-  }
+  function renderDayPicker(){ el("dayPicker").innerHTML=[1,2,3,4,5,6,0].map(d=>'<div class="day'+(selectedDays.includes(d)?" on":"")+'" data-day="'+d+'">'+DAY_NAMES[d]+'</div>').join(""); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-  // ---------- period form ----------
+  // ---------- form ----------
   function resetForm(){
-    editingId = null; selectedDays=[1,2,3,4,5];
+    editingId=null; selectedDays=[1,2,3,4,5];
     el("pName").value=""; el("pStart").value="08:30"; el("pEnd").value="09:20";
-    el("formTitle").textContent="Add a period"; el("saveBtn").textContent="Add period";
-    el("cancelEditBtn").style.display="none";
+    el("formTitle").textContent="Add a class"; el("saveBtn").textContent="Add class"; el("cancelEditBtn").style.display="none";
     renderDayPicker();
   }
   function startEdit(id){
-    const p = state.periods.find(x=>x.id===id); if(!p) return;
+    const p=state.periods.find(x=>x.id===id); if(!p) return;
     editingId=id; selectedDays=p.days.slice();
     el("pName").value=p.name; el("pStart").value=p.start; el("pEnd").value=p.end;
-    el("formTitle").textContent="Edit period"; el("saveBtn").textContent="Save changes";
-    el("cancelEditBtn").style.display="block";
-    renderDayPicker();
-    el("pName").focus();
-    el("pName").scrollIntoView({behavior:"smooth", block:"center"});
+    el("formTitle").textContent="Edit class"; el("saveBtn").textContent="Save changes"; el("cancelEditBtn").style.display="block";
+    renderDayPicker(); el("pName").focus(); el("pName").scrollIntoView({behavior:"smooth",block:"center"});
   }
   function saveForm(){
-    const name = el("pName").value.trim() || "Period";
-    const start = el("pStart").value, end = el("pEnd").value;
-    if(!start || !end){ toast("Pick a start and end time"); return; }
-    if(hmToMin(end) <= hmToMin(start)){ toast("End must be after start"); return; }
+    const name=el("pName").value.trim()||"Class";
+    const start=el("pStart").value, end=el("pEnd").value;
+    if(!start||!end){ toast("Pick a start and end time"); return; }
+    if(hmToMin(end)<=hmToMin(start)){ toast("End must be after start"); return; }
     if(!selectedDays.length){ toast("Pick at least one day"); return; }
-    if(editingId){
-      Object.assign(state.periods.find(x=>x.id===editingId), {name,start,end,days:selectedDays.slice()});
-      toast("Period updated");
-    }else{
-      state.periods.push({id:uid(), name, start, end, days:selectedDays.slice()});
-      toast("Period added");
-    }
+    if(editingId){ Object.assign(state.periods.find(x=>x.id===editingId),{name,start,end,days:selectedDays.slice()}); toast("Class updated"); }
+    else { state.periods.push({id:uid(),name,start,end,days:selectedDays.slice()}); toast("Class added"); }
     saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); resetForm();
   }
-
-  // ---------- example schedule ----------
   function loadExample(){
-    const base = [
-      ["Period 1","08:30","09:20"],["Period 2","09:25","10:15"],
-      ["Break","10:15","10:30"],["Period 3","10:30","11:20"],
-      ["Period 4","11:25","12:15"],["Lunch","12:15","12:55"],
-      ["Period 5","12:55","13:45"],["Period 6","13:50","14:40"]
-    ];
-    state.periods = base.map(([n,s,e])=>({id:uid(),name:n,start:s,end:e,days:[1,2,3,4,5]}));
-    saveState(); renderPeriodList(); renderNow(); scheduleNotifications();
-    toast("Loaded a sample day — edit it to match yours");
+    const base=[["Period 1","08:30","09:20"],["Period 2","09:25","10:15"],["Break","10:15","10:30"],
+      ["Period 3","10:30","11:20"],["Period 4","11:25","12:15"],["Lunch","12:15","12:55"],
+      ["Period 5","12:55","13:45"],["Period 6","13:50","14:40"]];
+    state.periods=base.map(([n,s,e])=>({id:uid(),name:n,start:s,end:e,days:[1,2,3,4,5]}));
+    saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); toast("Loaded a sample day — edit it to match yours");
   }
 
-  // ---------- ICS export ----------
+  // ---------- ICS ----------
   function pad(n){ return String(n).padStart(2,"0"); }
-  function dtStamp(){
-    const d=new Date();
-    return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+"Z";
-  }
+  function dtStamp(){ const d=new Date(); return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+"T"+pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds())+"Z"; }
   function nextDateForDay(dow, hm){
-    const now = new Date();
-    const [h,m]=hm.split(":").map(Number);
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-    let add = (dow - d.getDay() + 7) % 7;
-    if(add===0 && d.getTime() < now.getTime()){ add = 7; }
-    d.setDate(d.getDate()+add);
-    return d;
+    const now=new Date(); const [h,m]=hm.split(":").map(Number);
+    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0);
+    let add=(dow-d.getDay()+7)%7; if(add===0 && d.getTime()<now.getTime()) add=7; d.setDate(d.getDate()+add); return d;
   }
-  function floatLocal(d){
-    return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"T"+pad(d.getHours())+pad(d.getMinutes())+"00";
-  }
+  function floatLocal(d){ return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"T"+pad(d.getHours())+pad(d.getMinutes())+"00"; }
   function icsEscape(s){ return String(s).replace(/([,;\\])/g,"\\$1").replace(/\n/g,"\\n"); }
-  const BYDAY = ["SU","MO","TU","WE","TH","FR","SA"];
-
+  const BYDAY=["SU","MO","TU","WE","TH","FR","SA"];
   function buildICS(){
-    const lead = Number(state.settings.lead)||5;
-    const termEnd = state.settings.termEnd || defaultTermEnd();
-    const [ty,tm,td] = termEnd.split("-").map(Number);
-    const untilFloat = ty+pad(tm)+pad(td)+"T235900";
-    const lines = [
-      "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bell Schedule//EN",
-      "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:School Bells"
-    ];
+    const lead=Number(state.settings.lead)||5;
+    const termEnd=state.settings.termEnd||defaultTermEnd(); const [ty,tm,td]=termEnd.split("-").map(Number);
+    const untilFloat=ty+pad(tm)+pad(td)+"T235900";
+    const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Schedule//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:School Schedule"];
     state.periods.forEach(p=>{
       if(!p.days.length) return;
-      const firstDow = p.days.slice().sort((a,b)=> nextDateForDay(a,p.start) - nextDateForDay(b,p.start))[0];
-      const startDate = nextDateForDay(firstDow, p.start);
-      const [eh,em]=p.end.split(":").map(Number);
-      const endDate = new Date(startDate); endDate.setHours(eh,em,0,0);
-      const byday = p.days.slice().sort().map(d=>BYDAY[d]).join(",");
-      lines.push("BEGIN:VEVENT");
-      lines.push("UID:"+p.id+"-"+Date.now()+"@bellschedule");
-      lines.push("DTSTAMP:"+dtStamp());
-      lines.push("DTSTART:"+floatLocal(startDate));
-      lines.push("DTEND:"+floatLocal(endDate));
-      lines.push("RRULE:FREQ=WEEKLY;BYDAY="+byday+";UNTIL="+untilFloat);
-      lines.push("SUMMARY:"+icsEscape(p.name));
-      lines.push("BEGIN:VALARM");
-      lines.push("ACTION:DISPLAY");
-      lines.push("DESCRIPTION:"+icsEscape("Get ready — "+p.name+" starts in "+lead+" min"));
-      lines.push("TRIGGER:-PT"+lead+"M");
-      lines.push("END:VALARM");
-      lines.push("END:VEVENT");
+      const firstDow=p.days.slice().sort((a,b)=>nextDateForDay(a,p.start)-nextDateForDay(b,p.start))[0];
+      const startDate=nextDateForDay(firstDow,p.start); const [eh,em]=p.end.split(":").map(Number);
+      const endDate=new Date(startDate); endDate.setHours(eh,em,0,0);
+      const byday=p.days.slice().sort().map(d=>BYDAY[d]).join(",");
+      lines.push("BEGIN:VEVENT","UID:"+p.id+"-"+Date.now()+"@myschedule","DTSTAMP:"+dtStamp(),
+        "DTSTART:"+floatLocal(startDate),"DTEND:"+floatLocal(endDate),
+        "RRULE:FREQ=WEEKLY;BYDAY="+byday+";UNTIL="+untilFloat,"SUMMARY:"+icsEscape(p.name),
+        "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEscape("Get ready — "+p.name+" starts in "+lead+" min"),
+        "TRIGGER:-PT"+lead+"M","END:VALARM","END:VEVENT");
     });
-    lines.push("END:VCALENDAR");
-    return lines.join("\r\n");
+    lines.push("END:VCALENDAR"); return lines.join("\r\n");
   }
   function downloadICS(){
-    if(!state.periods.length){ toast("Add some periods first"); return; }
-    const blob = new Blob([buildICS()], {type:"text/calendar"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "school-bells.ics";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    toast("Opening calendar file — choose “Add All”");
+    if(!state.periods.length){ toast("Add some classes first"); return; }
+    const blob=new Blob([buildICS()],{type:"text/calendar"}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="school-schedule.ics"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000); toast("Opening calendar file — choose “Add All”");
   }
 
-  // ---------- in-app notifications ----------
+  // ---------- notifications ----------
   function clearNotifyTimers(){ notifyTimers.forEach(t=>clearTimeout(t)); notifyTimers=[]; }
   function scheduleNotifications(){
     clearNotifyTimers();
     if(!state.settings.notify) return;
-    if(!("Notification" in window) || Notification.permission!=="granted") return;
-    const lead = (Number(state.settings.lead)||5)*60*1000;
-    const now = new Date();
+    if(!("Notification" in window)||Notification.permission!=="granted") return;
+    const lead=(Number(state.settings.lead)||5)*60*1000; const now=new Date();
     periodsForDay(now.getDay()).forEach(p=>{
       const [h,m]=p.start.split(":").map(Number);
-      const t = new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0).getTime() - lead;
-      const delay = t - now.getTime();
-      if(delay>0 && delay < 24*3600*1000){
-        notifyTimers.push(setTimeout(()=>{
-          try{ new Notification("Get ready 🔔", {body:p.name+" starts in "+(state.settings.lead||5)+" min", icon:"icons/icon-192.png"}); }catch(e){}
-        }, delay));
-      }
+      const t=new Date(now.getFullYear(),now.getMonth(),now.getDate(),h,m,0).getTime()-lead; const delay=t-now.getTime();
+      if(delay>0 && delay<24*3600*1000){ notifyTimers.push(setTimeout(()=>{ try{ new Notification("Get ready 🔔",{body:p.name+" starts in "+(state.settings.lead||5)+" min",icon:"icons/icon-192.png"}); }catch(e){} }, delay)); }
     });
   }
   async function toggleNotify(){
     if(!("Notification" in window)){ showNotifyHint("Your browser can't show in-app alerts. Use the Calendar option above — it's more reliable anyway."); return; }
     if(Notification.permission==="denied"){ showNotifyHint("Notifications are blocked in Settings. The Calendar option above still works great."); return; }
-    let perm = Notification.permission;
-    if(perm!=="granted"){ perm = await Notification.requestPermission(); }
-    if(perm==="granted"){
-      state.settings.notify = true; saveState(); scheduleNotifications();
-      showNotifyHint("On. While the app is open, you'll get a nudge "+(state.settings.lead||5)+" min before each bell. For alerts when it's closed, use the Calendar button.");
-    }else{
-      showNotifyHint("Not enabled. No problem — the Calendar option above is the dependable one.");
-    }
+    let perm=Notification.permission; if(perm!=="granted") perm=await Notification.requestPermission();
+    if(perm==="granted"){ state.settings.notify=true; saveState(); scheduleNotifications(); showNotifyHint("On. While the app is open, you'll get a nudge "+(state.settings.lead||5)+" min before each bell. For alerts when it's closed, use the Calendar button."); }
+    else showNotifyHint("Not enabled. No problem — the Calendar option above is the dependable one.");
   }
   function showNotifyHint(msg){ const h=el("notifyHint"); h.textContent=msg; h.style.display="block"; }
 
-  // ---------- data export / import ----------
+  // ---------- data ----------
   function exportData(){
-    const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download="bell-schedule-backup.json";
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
-    toast("Backup downloaded");
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="my-schedule-backup.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); toast("Backup downloaded");
   }
-  function importData(file){
-    const r=new FileReader();
-    r.onload=()=>{ try{
-      state=normalize(JSON.parse(r.result)); saveState(); renderEverything(); toast("Schedule imported");
-    }catch(e){ toast("That file didn't look right"); } };
-    r.readAsText(file);
-  }
+  function importData(file){ const r=new FileReader(); r.onload=()=>{ try{ state=normalize(JSON.parse(r.result)); saveState(); renderEverything(); toast("Schedule imported"); }catch(e){ toast("That file didn't look right"); } }; r.readAsText(file); }
 
-  // ---------- toast ----------
   let toastTimer=null;
-  function toast(msg){
-    const t=el("toast"); t.textContent=msg; t.classList.add("show");
-    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"), 2600);
-  }
+  function toast(msg){ const t=el("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2600); }
 
-  // ---------- tabs ----------
   function switchView(name){
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
     el("view-"+name).classList.add("active");
     document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("active", b.dataset.view===name));
     window.scrollTo(0,0);
   }
-
   function renderEverything(){
-    el("lead").value = String(state.settings.lead||5);
-    el("termEnd").value = state.settings.termEnd || defaultTermEnd();
+    el("lead").value=String(state.settings.lead||5); el("termEnd").value=state.settings.termEnd||defaultTermEnd();
     renderPeriodList(); renderDayPicker(); renderNow(); scheduleNotifications();
   }
 
-  // ---------- wire up ----------
   function init(){
     renderEverything();
-    el("tabNow").onclick = ()=>switchView("now");
-    el("tabSchedule").onclick = ()=>switchView("schedule");
-
-    el("dayPicker").addEventListener("click", e=>{
-      const d = e.target.closest(".day"); if(!d) return;
-      const day = Number(d.dataset.day);
-      if(selectedDays.includes(day)) selectedDays = selectedDays.filter(x=>x!==day);
-      else selectedDays.push(day);
-      renderDayPicker();
-    });
-    el("saveBtn").onclick = saveForm;
-    el("cancelEditBtn").onclick = resetForm;
-    el("addExampleBtn").onclick = loadExample;
-
+    el("tabNow").onclick=()=>switchView("now");
+    el("tabSchedule").onclick=()=>switchView("schedule");
+    el("dayPicker").addEventListener("click", e=>{ const d=e.target.closest(".day"); if(!d) return; const day=Number(d.dataset.day); if(selectedDays.includes(day)) selectedDays=selectedDays.filter(x=>x!==day); else selectedDays.push(day); renderDayPicker(); });
+    el("saveBtn").onclick=saveForm; el("cancelEditBtn").onclick=resetForm; el("addExampleBtn").onclick=loadExample;
     el("periodList").addEventListener("click", e=>{
-      const btn = e.target.closest("button[data-act]"); if(!btn) return;
-      const id = btn.closest(".pitem").dataset.id;
+      const btn=e.target.closest("button[data-act]"); if(!btn) return; const id=btn.closest(".pcard").dataset.id;
       if(btn.dataset.act==="edit") startEdit(id);
-      else if(btn.dataset.act==="del"){
-        state.periods = state.periods.filter(p=>p.id!==id);
-        saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); toast("Deleted");
-        if(editingId===id) resetForm();
-      }
+      else if(btn.dataset.act==="del"){ state.periods=state.periods.filter(p=>p.id!==id); saveState(); renderPeriodList(); renderNow(); scheduleNotifications(); toast("Deleted"); if(editingId===id) resetForm(); }
     });
-
-    el("lead").onchange = ()=>{ state.settings.lead=Number(el("lead").value); saveState(); scheduleNotifications(); renderNow(); };
-    el("termEnd").onchange = ()=>{ state.settings.termEnd=el("termEnd").value||defaultTermEnd(); saveState(); };
-    el("icsBtn").onclick = downloadICS;
-    el("notifyBtn").onclick = toggleNotify;
-
-    el("exportBtn").onclick = exportData;
-    el("importBtn").onclick = ()=>el("importFile").click();
-    el("importFile").onchange = e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
-    el("clearBtn").onclick = ()=>{
-      if(confirm("Delete your whole schedule? This can't be undone.")){
-        state={periods:[],settings:{lead:5,termEnd:defaultTermEnd(),notify:false}};
-        saveState(); renderEverything(); toast("Cleared");
-      }
-    };
-
-    renderNow();
-    setInterval(renderNow, 1000);
+    el("lead").onchange=()=>{ state.settings.lead=Number(el("lead").value); saveState(); scheduleNotifications(); renderNow(); };
+    el("termEnd").onchange=()=>{ state.settings.termEnd=el("termEnd").value||defaultTermEnd(); saveState(); };
+    el("icsBtn").onclick=downloadICS; el("notifyBtn").onclick=toggleNotify;
+    el("exportBtn").onclick=exportData; el("importBtn").onclick=()=>el("importFile").click();
+    el("importFile").onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+    el("clearBtn").onclick=()=>{ if(confirm("Delete your whole schedule? This can't be undone.")){ state={periods:[],settings:{lead:5,termEnd:defaultTermEnd(),notify:false}}; saveState(); renderEverything(); toast("Cleared"); } };
+    renderNow(); setInterval(renderNow,1000);
     document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) scheduleNotifications(); });
-
     if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
   }
   init();
